@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  teacher
+  student
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash")
+  role         Role
+  classId      String?  @map("class_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  studentClass Class?            @relation("StudentClass", fields: [classId], references: [id], onDelete: SetNull)
+  teaching     TeacherClass[]
+  tasks        Task[]
+  completions  TaskCompletion[]
+
+  @@index([classId])
+  @@map("users")
+}
+
+model Class {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  classCode String   @unique @map("class_code") @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  students User[]         @relation("StudentClass")
+  teachers TeacherClass[]
+  tasks    Task[]
+
+  @@map("classes")
+}
+
+model TeacherClass {
+  teacherId String @map("teacher_id") @db.Uuid
+  classId   String @map("class_id") @db.Uuid
+
+  teacher User  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, classId])
+  @@index([classId])
+  @@map("teacher_classes")
+}
+
+model Task {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(150)
+  description String?  @db.VarChar(2000)
+  dueAt       DateTime @map("due_at") @db.Timestamptz(6)
+  classId     String   @map("class_id") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  class       Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator     User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  completions TaskCompletion[]
+
+  @@index([classId])
+  @@index([dueAt])
+  @@index([title])
+  @@map("tasks")
+}
+
+model TaskCompletion {
+  id          String    @id @default(uuid()) @db.Uuid
+  taskId      String    @map("task_id") @db.Uuid
+  studentId   String    @map("student_id") @db.Uuid
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+  @@map("task_completions")
+}
