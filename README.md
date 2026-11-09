@@ -76,37 +76,6 @@ Kode kelas untuk registrasi: `KELAS-7A`, `KELAS-7B`.
 
 Kelas baru dibuat pihak sekolah, mis. lewat Prisma Studio: `cd backend && npx prisma studio` → tabel `classes`.
 
-## Versi desktop (opsional)
-
-Aplikasi web ini sudah responsif dan bisa dibuka dari browser desktop. Untuk jendela aplikasi sendiri (Electron):
-
-```
-npm --prefix desktop install
-npm run dev          # terminal 1
-npm run desktop      # terminal 2
-```
-
-Untuk membuat installer `.exe` perlu tambahan `electron-builder` (belum disertakan).
-
-## Akses dari perangkat lain (HP / PC lain di jaringan)
-
-Ganti `CORS_ORIGIN` di `backend\.env` dengan alamat yang dipakai di browser, mis. `http://192.168.1.10:3000`, lalu restart. Jalankan frontend dengan `npm --prefix frontend run dev -- -H 0.0.0.0`.
-
-## Menjalankan test
-
-Test integrasi memakai database yang sudah dimigrasi dan di-seed:
-
-```
-npm test
-```
-
-## Mode produksi
-
-1. `backend\.env`: `NODE_ENV=production`, `JWT_SECRET` kuat, `CORS_ORIGIN` = URL frontend (HTTPS).
-2. `cd backend && npx prisma migrate deploy` (jangan jalankan seeder).
-3. `npm run build` lalu `npm run start`.
-4. Letakkan di belakang HTTPS (cookie sesi memakai flag `Secure` di production).
-
 ## Ringkasan API
 
 | Method & path | Akses | Fungsi |
@@ -123,11 +92,3 @@ npm test
 | PUT `/api/tasks/:id/completion` | Siswa | Tandai selesai (idempotent) |
 
 Respons: `{success, data, meta}` atau `{success:false, error:{code, message, details}}`.
-
-## Keputusan desain (bagian 12 PRD)
-
-- Siswa memasukkan **kode kelas** saat registrasi; guru memasukkan satu atau lebih kode kelas yang diajar.
-- Tenggat: tanggal + waktu, ditampilkan/diinput dalam **WIB (Asia/Jakarta)**, disimpan `timestamptz`.
-- Penghapusan tugas: **permanen** (hard delete).
-- Status selesai: satu kali, **tidak ada batal selesai** di MVP.
-- Belum selesai = belum ada record completion (atau `completed_at` NULL).
